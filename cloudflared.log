@@ -1,0 +1,1 @@
+failed to create tunnel: Create Tunnel API call failed: REST request failed: Post "https://api.cloudflare.com/client/v4/accounts/50478ee551c60ab321390c37d36165ee/cfd_tunnel": dial tcp: lookup api.cloudflare.com on 127.0.0.53:53: server misbehaving

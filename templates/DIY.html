@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Do It Yourself!</title>
+<link rel="icon" href="/static/favicon.ico" type="image/x-icon">
+<style>
+  :root{
+    --neon:#00ff66;
+    --accent:#00ffff;
+    --bright:#ffff66;
+    --bg:#000;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  html,body{height:100%;width:100%;background:var(--bg);display:flex;align-items:center;justify-content:center;font-family:"Consolas","Courier New",monospace;color:var(--neon);}
+
+  .card{
+    max-width:90vw;
+    max-height:90vh;
+    padding:2rem;
+    border:2px solid rgba(0,255,102,0.3);
+    border-radius:16px;
+    box-shadow:0 0 40px rgba(0,255,102,0.25), inset 0 0 10px rgba(0,255,102,0.08);
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    gap:2rem;
+    background: rgba(0,0,0,0.4);
+  }
+
+  .logo-circle{
+    width:200px;
+    height:200px;
+    border-radius:50%;
+    border:3px solid rgba(0,255,102,0.2);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    box-shadow:0 0 20px rgba(0,255,102,0.2);
+    overflow:hidden;
+  }
+  .logo-circle img{width:90%;height:90%;border-radius:50%;object-fit:cover;}
+
+  .diy{
+    font-size:2rem;
+    text-align:center;
+    line-height:1.4;
+    max-width:80vw;
+  }
+  .highlight{color:var(--bright);font-weight:700;}
+
+  .site{
+    font-size:1.8rem;
+    position: relative;
+  }
+  .site a{color:var(--accent);text-decoration:none;border-bottom:2px dotted rgba(0,255,255,0.3);}
+  .site a:hover{color:#ff77ff;border-color:rgba(255,119,255,0.6);}
+
+  /* glowing blinking cursor that stays forever */
+  #site-typewriter::after {
+    content: '|';
+    margin-left:0.3rem;
+    color: var(--neon);
+    font-weight:bold;
+    font-size:1.2em;
+    text-shadow:0 0 6px var(--neon), 0 0 12px rgba(0,255,102,0.5);
+    animation: blink 1s steps(2,start) infinite;
+  }
+  @keyframes blink{50%{opacity:0}}
+
+  @media(max-width:700px){
+    .logo-circle{width:140px;height:140px;}
+    .diy{font-size:1.5rem;}
+    .site{font-size:1.3rem;}
+  }
+</style>
+</head>
+<body>
+  <div class="card">
+    <div class="logo-circle">
+      <img src="/static/ms32man.png" alt="Logo" onerror="this.style.display='none';">
+    </div>
+    <div class="diy">
+      I am bored now. So I give you the <span class="highlight">access to my hackpanel</span>.<br>
+      Now <span class="highlight">control</span> all infected <span class="highlight">system</span> just like I do <br>
+      <span class="highlight">all by yourself</span> and <span class="highlight">make the chaos</span>.
+    </div>
+    <div id="site-typewriter" class="site"></div>
+  </div>
+
+<script>
+  const fullLinkText = `Here's the link: <a href="https://ms32-sha2.onrender.com" target="_blank" rel="noopener noreferrer">ms32-sha2.onrender.com</a>`;
+  const targetElement = document.getElementById('site-typewriter');
+  const typingSpeed = 28;
+  let charIndex = 0;
+
+  function typeWriter(){
+    if(charIndex < fullLinkText.length){
+      if(fullLinkText.charAt(charIndex)==='<'){
+        const tagEnd = fullLinkText.indexOf('>',charIndex);
+        if(tagEnd!==-1){
+          const tag = fullLinkText.substring(charIndex,tagEnd+1);
+          targetElement.innerHTML += tag;
+          charIndex = tagEnd + 1;
+          setTimeout(typeWriter,0);
+          return;
+        }
+      }
+      const c = fullLinkText.charAt(charIndex);
+      if(c!=='\r' && c!=='\n'){targetElement.innerHTML += c;}
+      charIndex++;
+      setTimeout(typeWriter, typingSpeed + Math.random()*15);
+    } 
+    // cursor keeps blinking forever — no finished class
+  }
+
+  window.addEventListener('load',()=>setTimeout(typeWriter,200));
+</script>
+</body>
+</html>
