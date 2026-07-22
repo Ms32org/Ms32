@@ -670,7 +670,7 @@ def com_txt():
 def com():
     with open(state_file, "r") as file:
         data1 = json.load(file)
-    color = data1[selected_user]["comToggleState"]["color"]
+    color = data1.get(selected_user, {}).get("comToggleState", {}).get("color", "red")
     return render_template("com.html",color=color)   
     
 @app.route("/edit-file", methods=["POST", "GET"])
