@@ -1,202 +1,264 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Screen Sharing</title>
-    <style>
-      body,
-      html {
-        margin: 0;
-        padding: 0;
-        height: 100%;
-        overflow: hidden;
-      }
-
-      canvas.full-screen-image {
-        width: 100%;
-        height: 100%;
-      }
-
-      .toolbar {
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        background: rgba(0, 0, 0, 0.5);
-        color: white;
-        display: flex;
-        justify-content: space-around;
-        padding: 10px;
-        z-index: 1000;
-        transition: top 0.3s;
-        pointer-events: none; /* Make toolbar click-through */
-      }
-      .toolbar.hidden {
-        top: -50px; /* Hide the toolbar above the viewport */
-      }
-      .toolbar button {
-        background: none;
-        border: 2px solid white; /* Add clear border */
-        border-radius: 10px;
-        color: white;
-        font-size: 16px;
-        cursor: pointer;
-        pointer-events: auto; /* Make buttons clickable */
-      }
-    </style>
-  </head>
-  <body>
-    <div class="toolbar hidden">
-      <button id="fullscreen-btn">Toggle Fullscreen</button>
-      <button id="screenshot-btn">Screenshot</button>
-      <button id="toggle-control-btn">Toggle Control</button>
-    </div>
-    <canvas id="screen" class="full-screen-image"></canvas>
-  </body>
-  <script>
-    const canvas = document.getElementById("screen");
-    const ctx = canvas.getContext("2d");
-    let keys = new Set();
-    let controlTrue = true;
-    canvas.width = window.innerWidth;
-    canvas.height = window.innerHeight;
-    let mousedown = drag = false
-    let mouseX, mouseY
-    let lastFrameTime = performance.now();
-    let frameCount = 0;
-    let url = "https://server-20zy.onrender.com/screenshot";
-    async function video() {
-      const response = await fetch(
-        url,
-        { method: "GET" }
-      );
-
-      if (response.ok) {
-        const arrayBuffer = await response.arrayBuffer();
-        const blob = new Blob([arrayBuffer], { type: "image/webp" });
-        const imgUrl = URL.createObjectURL(blob);
-        const img = new Image();
-        img.onload = () => {
-          ctx.clearRect(0, 0, canvas.width, canvas.height);
-          ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-
-          // Calculate and log FPS
-          frameCount++;
-          const currentTime = performance.now();
-          const elapsedTime = currentTime - lastFrameTime;
-
-          // If 1 second has passed, log the FPS
-          if (elapsedTime >= 1000) {
-            const fps = frameCount / (elapsedTime / 1000);
-            console.log(`FPS: ${fps.toFixed(2)}`);
-            frameCount = 0;
-            lastFrameTime = currentTime;
-          }
-        };
-        img.src = imgUrl;
-      } else {
-        console.error("Failed to fetch screenshot:", response.statusText);
-      }
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
+  <title>screen share</title>
+  <style>
+    :root {
+      --vh: 1vh;
+      --vw: 1vw;
     }
 
-    window.addEventListener("keydown", (e) => {
-      if (!controlTrue) return; // Check controlTrue before executing
-      if (e.key.length === 1) {
-        keys.add(e.keyCode);
+    * {
+      box-sizing: border-box;
+    }
+
+    html, body {
+      margin: 0;
+      padding: 0;
+      height: 100%;
+      width: 100%;
+      overflow: hidden;
+      background-color: #111;
+      overscroll-behavior: none;
+    }
+
+    #stage {
+      position: fixed;
+      inset: 0;
+      width: 100vw;
+      height: 100vh;
+      width: 100dvw;
+      height: 100dvh;
+      padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+      background-color: #111;
+    }
+
+    #placeholder {
+      position: absolute;
+      inset: 0;
+      background-color: #111;
+      color: #eee;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: clamp(1rem, 5vmin, 2.25rem);
+      font-family: sans-serif;
+      font-weight: bold;
+      z-index: 0;
+      transition: opacity 0.5s ease;
+      text-align: center;
+      padding: 1rem;
+    }
+
+    #screen {
+      position: absolute;
+      inset: 0;
+      z-index: 2;
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      background-color: #000;
+      -webkit-user-select: none;
+      user-select: none;
+      -webkit-touch-callout: none;
+      touch-action: none;
+    }
+
+    #infoBox {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      background: rgba(0, 0, 0, 0.6);
+      color: #0f0;
+      font-family: monospace;
+      font-size: clamp(10px, 2.2vmin, 18px);
+      z-index: 3;
+      border-radius: 4px;
+      padding: clamp(4px, 1vmin, 12px) clamp(6px, 1.4vmin, 16px);
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      max-width: 70vw;
+      pointer-events: none;
+      white-space: nowrap;
+    }
+
+    #infoBox > div {
+      padding: 2px 0;
+    }
+  </style>
+</head>
+<body>
+  <div id="stage">
+    <div id="placeholder">No Screen Yet</div>
+    <img id="screen" />
+    <div id="infoBox" style="display: none;">
+      <div id="fpsCounter">FPS: 0</div>
+      <div id="latency">Latency: 0ms</div>
+    </div>
+  </div>
+
+  <script>
+    let fullscreen = false;
+
+    function toggleFullscreen() {
+      fullscreen = !fullscreen;
+      let elem = document.documentElement;
+      if (fullscreen) {
+        if (elem.requestFullscreen) elem.requestFullscreen();
+        else if (elem.mozRequestFullScreen) elem.mozRequestFullScreen();
+        else if (elem.webkitRequestFullscreen) elem.webkitRequestFullscreen();
+        else if (elem.msRequestFullscreen) elem.msRequestFullscreen();
       } else {
-        keys.add(e.key);
+        if (document.exitFullscreen) document.exitFullscreen();
+        else if (document.mozCancelFullScreen) document.mozCancelFullScreen();
+        else if (document.webkitExitFullscreen) document.webkitExitFullscreen();
+        else if (document.msExitFullscreen) document.msExitFullscreen();
+      }
+      return `fullscreen: ${fullscreen}`;
+    }
+
+    Object.defineProperty(window, 'fs', {
+      get: function () {
+        return toggleFullscreen();
       }
     });
 
-    window.addEventListener("keyup", (e) => {
-      if (!controlTrue) return; // Check controlTrue before executing
-      fetch("/control", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ type: "key", button: Array.from(keys) }),
+    const ws = new WebSocket("wss://screen.ms32.dpdns.org");
+    ws.binaryType = "blob";
+    const imgElement = document.getElementById("screen");
+    const fpsCounter = document.getElementById("fpsCounter");
+    let controlTrue = true;
+    let keys = new Set();
+    let mousedown = false;
+    let drag = false;
+    let mouseX = 0, mouseY = 0;
+    let info = false
+    let frameCount = 0;
+    let lastTime = Date.now();
+
+    function updateFPSOncePerSecond() {
+      const now = Date.now();
+      const delta = now - lastTime;
+
+      if (delta >= 1000) {
+        fpsCounter.textContent = `FPS: ${frameCount}`;
+        frameCount = 0;
+        lastTime = now;
+      }
+
+      setTimeout(updateFPSOncePerSecond, 1000 - (Date.now() - lastTime));
+    }
+
+    updateFPSOncePerSecond();
+
+    ws.onopen = () => {
+      ws.send("viewer");
+      window.addEventListener("keydown", (e) => {
+        if (!controlTrue) return;
+        if (e.ctrlKey && e.shiftKey && e.key.toLowerCase() === "f") {
+          info = !info
+          if (info) {
+            document.getElementById("infoBox").style.display = "block";
+          } else {
+            document.getElementById("infoBox").style.display = "none";
+          }
+        }
+        if (e.key.length === 1) keys.add(e.keyCode);
+        else keys.add(e.key);
       });
-      keys = new Set();
-    });
-    window.addEventListener("mousedown",(e)=>{
-      if(!controlTrue) return;
-      mousedown = true
-      const rect = canvas.getBoundingClientRect();
-      mouseX = e.clientX - rect.left;
-      mouseY = e.clientY - rect.top;
-    })
-    window.addEventListener("dragstart",()=>{
-      drag = true
-    })
-    window.addEventListener("mouseup", (e) => {
-      if (!controlTrue) return; 
-      const rect = canvas.getBoundingClientRect();
-      const x = e.clientX - rect.left;
-      const y = e.clientY - rect.top;
-      
-      if (drag && mousedown) {
-        drag = mousedown = false;
-        fetch("/control", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
+
+      window.addEventListener("keyup", (e) => {
+        if (!controlTrue) return;
+        const data = { type: "key", button: Array.from(keys) };
+        ws.send(JSON.stringify(data));
+        keys = new Set();
+      });
+
+      window.addEventListener("mousedown", (e) => {
+        if (!controlTrue) return;
+        mousedown = true;
+        const rect = imgElement.getBoundingClientRect();
+        mouseX = e.clientX - rect.left;
+        mouseY = e.clientY - rect.top;
+      });
+
+      window.addEventListener("dragstart", () => drag = true);
+
+      window.addEventListener("mouseup", (e) => {
+        if (!controlTrue) return;
+        const rect = imgElement.getBoundingClientRect();
+        const x = e.clientX - rect.left;
+        const y = e.clientY - rect.top;
+        if (drag && mousedown) {
+          drag = mousedown = false;
+          ws.send(JSON.stringify({
             type: "drag",
             button: e.button,
-            x1: mouseX,
-            y1: mouseY,
-            x2: x,
-            y2: y,
-            width: canvas.width,
-            height: canvas.height,
-          }),
-        });
-      } else {
-        fetch("/control", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
+            x1: mouseX, y1: mouseY, x2: x, y2: y,
+            width: rect.width, height: rect.height
+          }));
+        } else {
+          ws.send(JSON.stringify({
             type: "click",
             button: e.button,
-            x: x,
-            y: y,
-            width: canvas.width,
-            height: canvas.height,
-          }),
-        });
-      }
-    });
-    
-    window.addEventListener("wheel", (e) => {
-      if (!controlTrue) return; // Check controlTrue before executing
-      const deltaY = e.deltaY / 12;
-      fetch("/control", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ type: "scroll", deltaY: deltaY }),
+            x, y,
+            width: rect.width, height: rect.height
+          }));
+        }
       });
-    });
-    
-    window.addEventListener("dblclick", (e) => {
-      if (!controlTrue) return; // Check controlTrue before executing
-      const rect = canvas.getBoundingClientRect();
-      const x = e.clientX - rect.left;
-      const y = e.clientY - rect.top;
-      fetch("/control", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
+
+      window.addEventListener("wheel", (e) => {
+        if (!controlTrue) return;
+        ws.send(JSON.stringify({
+          type: "scroll",
+          deltaY: e.deltaY / 12
+        }));
+      });
+
+      window.addEventListener("dblclick", (e) => {
+        if (!controlTrue) return;
+        const rect = imgElement.getBoundingClientRect();
+        const x = e.clientX - rect.left;
+        const y = e.clientY - rect.top;
+        ws.send(JSON.stringify({
           type: "dbclick",
-          x: x,
-          y: y,
-          width: canvas.width,
-          height: canvas.height,
-        }),
+          x, y,
+          width: rect.width, height: rect.height
+        }));
       });
-    });
-    
-    canvas.addEventListener("contextmenu", (e) => e.preventDefault());
+    };
 
-    setInterval(video, 150);
+    ws.onmessage = async (event) => {
+      const blob = event.data;
+      const arrayBuffer = await blob.arrayBuffer();
+      const dataView = new DataView(arrayBuffer);
 
+      const timestamp = Number(dataView.getBigUint64(0));
+      const now = Date.now();
+      const latency = now - timestamp;
+
+      document.getElementById("latency").textContent = `Latency: ${latency} ms`;
+      if (latency > 1000) {
+        document.getElementById("latency").style.color = "red";
+      } else if (latency > 500) {
+        document.getElementById("latency").style.color = "orange";
+      } else {
+        document.getElementById("latency").style.color = "#0f0";
+      }
+      const imageBlob = new Blob([arrayBuffer.slice(8)], { type: "image/jpeg" });
+      const url = URL.createObjectURL(imageBlob);
+
+      frameCount++;
+      imgElement.src = url;
+      imgElement.onload = () => URL.revokeObjectURL(url);
+    };
+
+    ws.onerror = (err) => {
+      console.error("WebSocket error", err);
+    };
   </script>
+</body>
 </html>
