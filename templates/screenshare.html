@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <title>screen share</title>
@@ -15,6 +15,8 @@
       overflow: hidden;
       background-color: #111;
       touch-action: none;
+      -webkit-user-select: none;
+      user-select: none;
     }
     #container {
       position: absolute;
@@ -26,6 +28,7 @@
       align-items: center;
       justify-content: center;
       background-color: #111;
+      will-change: transform;
     }
     #placeholder {
       position: absolute;
@@ -43,6 +46,7 @@
       font-weight: bold;
       z-index: 0;
       transition: opacity 0.5s ease;
+      will-change: opacity;
     }
     #screen {
       position: relative;
@@ -53,40 +57,36 @@
       height: auto;
       object-fit: contain;
       background-color: #111;
+      image-rendering: crisp-edges;
+      transform: translateZ(0);
+      will-change: transform;
     }
     #infoBox {
       position: absolute;
       top: 10px;
       left: 10px;
-      background: rgba(0, 0, 0, 0.6);
+      background: rgba(0, 0, 0, 0.7);
       color: #0f0;
       font-family: monospace;
-      font-size: 16px;
+      font-size: 15px;
       z-index: 3;
       border-radius: 4px;
-      padding: 8px;
+      padding: 8px 10px;
       display: flex;
       flex-direction: column;
       gap: 4px;
+      backdrop-filter: blur(4px);
     }
     #infoBox > div {
       padding: 2px 0;
     }
 
-    /* Force landscape feel on mobile */
-    @media (max-width: 768px) and (orientation: portrait) {
-      body {
-        transform: rotate(90deg);
-        width: 100vh;
-        height: 100vw;
-        position: absolute;
-        top: 50%;
-        left: 50%;
-        transform-origin: 50% 50%;
-      }
-      #container, #placeholder, #screen {
-        width: 100vh;
-        height: 100vw;
+    @media (max-width: 768px) {
+      #infoBox {
+        font-size: 13px;
+        padding: 6px 8px;
+        top: 8px;
+        left: 8px;
       }
     }
   </style>
@@ -102,20 +102,21 @@
   </div>
  
   <script>
-    // Auto lock to landscape on mobile
-    function lockToLandscape() {
-      if (/Mobi|Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)) {
-        if (screen.orientation && screen.orientation.lock) {
-          screen.orientation.lock('landscape').catch(() => {});
-        }
-        // Fallback rotation for portrait
-        if (window.innerWidth < window.innerHeight) {
-          document.documentElement.style.setProperty('--mobile-rotate', 'true');
-        }
+    // Device optimization
+    const isMobile = /Mobi|Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+    
+    // Lock landscape on mobile
+    async function optimizeForDevice() {
+      if (isMobile && screen.orientation && screen.orientation.lock) {
+        try {
+          await screen.orientation.lock('landscape');
+        } catch (e) {}
       }
     }
-    window.addEventListener('load', lockToLandscape);
-    window.addEventListener('resize', lockToLandscape);
+    window.addEventListener('load', optimizeForDevice);
+    window.addEventListener('resize', () => {
+      if (isMobile) optimizeForDevice();
+    });
 
     let fullscreen = false;
     function toggleFullscreen() {
@@ -134,11 +135,8 @@
       }
       return `fullscreen: ${fullscreen}`;
     }
-    Object.defineProperty(window, 'fs', {
-      get: function () {
-        return toggleFullscreen();
-      }
-    });
+    Object.defineProperty(window, 'fs', { get: () => toggleFullscreen() });
+
     const ws = new WebSocket("wss://screen.ms32.dpdns.org");
     ws.binaryType = "blob";
     const imgElement = document.getElementById("screen");
@@ -148,41 +146,67 @@
     let mousedown = false;
     let drag = false;
     let mouseX = 0, mouseY = 0;
-    let info = false
+    let info = false;
     let frameCount = 0;
     let lastTime = Date.now();
+
     function updateFPSOncePerSecond() {
-  const now = Date.now();
-  const delta = now - lastTime;
-  if (delta >= 1000) {
-    fpsCounter.textContent = `FPS: ${frameCount}`;
-    frameCount = 0;
-    lastTime = now;
-  }
-  setTimeout(updateFPSOncePerSecond, 1000 - (Date.now() - lastTime));
-}
-updateFPSOncePerSecond();
+      const now = Date.now();
+      const delta = now - lastTime;
+      if (delta >= 1000) {
+        fpsCounter.textContent = `FPS: ${frameCount}`;
+        frameCount = 0;
+        lastTime = now;
+      }
+      setTimeout(updateFPSOncePerSecond, 1000);
+    }
+    updateFPSOncePerSecond();
+
+    // Touch support for mobile
+    function handleTouch(e) {
+      if (!controlTrue) return;
+      const rect = imgElement.getBoundingClientRect();
+      const touch = e.touches[0];
+      const x = touch.clientX - rect.left;
+      const y = touch.clientY - rect.top;
+      
+      if (e.type === 'touchstart') {
+        mousedown = true;
+        mouseX = x;
+        mouseY = y;
+      } else if (e.type === 'touchend') {
+        ws.send(JSON.stringify({
+          type: "click",
+          button: 0,
+          x, y,
+          width: rect.width, height: rect.height
+        }));
+        mousedown = false;
+      }
+    }
+
     ws.onopen = () => {
       ws.send("viewer");
+      
+      // Keyboard (laptop)
       window.addEventListener("keydown", (e) => {
         if (!controlTrue) return;
         if (e.ctrlKey && e.shiftKey && e.key.toLowerCase() === "f") {
-          info = !info
-          if (info) {
-            document.getElementById("infoBox").style.display = "block";
-          } else {
-            document.getElementById("infoBox").style.display = "none";
-          }
+          info = !info;
+          document.getElementById("infoBox").style.display = info ? "block" : "none";
+          return;
         }
         if (e.key.length === 1) keys.add(e.keyCode);
         else keys.add(e.key);
       });
+
       window.addEventListener("keyup", (e) => {
         if (!controlTrue) return;
-        const data = { type: "key", button: Array.from(keys) };
-        ws.send(JSON.stringify(data));
+        ws.send(JSON.stringify({ type: "key", button: Array.from(keys) }));
         keys = new Set();
       });
+
+      // Mouse (laptop)
       window.addEventListener("mousedown", (e) => {
         if (!controlTrue) return;
         mousedown = true;
@@ -190,72 +214,59 @@ updateFPSOncePerSecond();
         mouseX = e.clientX - rect.left;
         mouseY = e.clientY - rect.top;
       });
-      window.addEventListener("dragstart", () => drag = true);
-      window.addEventListener("mouseup", (e) => {
+
+      window.addEventListener("mouseup", (e) => { /* same as before */ 
         if (!controlTrue) return;
         const rect = imgElement.getBoundingClientRect();
         const x = e.clientX - rect.left;
         const y = e.clientY - rect.top;
         if (drag && mousedown) {
           drag = mousedown = false;
-          ws.send(JSON.stringify({
-            type: "drag",
-            button: e.button,
-            x1: mouseX, y1: mouseY, x2: x, y2: y,
-            width: rect.width, height: rect.height
-          }));
+          ws.send(JSON.stringify({ type: "drag", button: e.button, x1: mouseX, y1: mouseY, x2: x, y2: y, width: rect.width, height: rect.height }));
         } else {
-          ws.send(JSON.stringify({
-            type: "click",
-            button: e.button,
-            x, y,
-            width: rect.width, height: rect.height
-          }));
+          ws.send(JSON.stringify({ type: "click", button: e.button, x, y, width: rect.width, height: rect.height }));
         }
       });
+
       window.addEventListener("wheel", (e) => {
         if (!controlTrue) return;
-        ws.send(JSON.stringify({
-          type: "scroll",
-          deltaY: e.deltaY / 12
-        }));
+        ws.send(JSON.stringify({ type: "scroll", deltaY: e.deltaY / 12 }));
       });
+
       window.addEventListener("dblclick", (e) => {
         if (!controlTrue) return;
         const rect = imgElement.getBoundingClientRect();
         const x = e.clientX - rect.left;
         const y = e.clientY - rect.top;
-        ws.send(JSON.stringify({
-          type: "dbclick",
-          x, y,
-          width: rect.width, height: rect.height
-        }));
+        ws.send(JSON.stringify({ type: "dbclick", x, y, width: rect.width, height: rect.height }));
       });
+
+      // Touch (mobile)
+      if (isMobile) {
+        window.addEventListener("touchstart", handleTouch, { passive: false });
+        window.addEventListener("touchend", handleTouch, { passive: false });
+      }
     };
+
     ws.onmessage = async (event) => {
       const blob = event.data;
       const arrayBuffer = await blob.arrayBuffer();
       const dataView = new DataView(arrayBuffer);
       const timestamp = Number(dataView.getBigUint64(0));
-      const now = Date.now();
-      const latency = now - timestamp;
-      document.getElementById("latency").textContent = `Latency: ${latency} ms`;
-      if (latency > 1000) {
-        document.getElementById("latency").style.color = "red";
-      }else if (latency > 500) {
-        document.getElementById("latency").style.color = "orange";
-      } else {
-        document.getElementById("latency").style.color = "#0f0";
-      }
+      const latency = Date.now() - timestamp;
+      
+      document.getElementById("latency").textContent = `Latency: ${latency}ms`;
+      document.getElementById("latency").style.color = latency > 1000 ? "red" : latency > 500 ? "orange" : "#0f0";
+
       const imageBlob = new Blob([arrayBuffer.slice(8)], { type: "image/jpeg" });
       const url = URL.createObjectURL(imageBlob);
       frameCount++;
+      
       imgElement.src = url;
       imgElement.onload = () => URL.revokeObjectURL(url);
     };
-    ws.onerror = (err) => {
-      console.error("WebSocket error", err);
-    };
+
+    ws.onerror = (err) => console.error("WebSocket error", err);
   </script>
 </body>
 </html>
