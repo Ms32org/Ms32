@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>screen share</title>
   <style>
     html, body {
@@ -11,6 +11,19 @@
       height: 100%;
       width: 100%;
       overflow: hidden;
+      background-color: #111;
+      touch-action: none;
+    }
+    #container {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background-color: #111;
     }
     #placeholder {
       position: absolute;
@@ -32,9 +45,12 @@
     #screen {
       position: relative;
       z-index: 2;
-      width: 100vw;
-      height: 100vh;
-      object-fit: cover;
+      max-width: 100%;
+      max-height: 100%;
+      width: auto;
+      height: auto;
+      object-fit: contain;
+      background-color: #111;
     }
     #infoBox {
       position: absolute;
@@ -54,20 +70,20 @@
     #infoBox > div {
       padding: 2px 0;
     }
-
   </style>
 </head>
 <body>
-  <img id="screen" />
+  <div id="container">
+    <img id="screen" />
+  </div>
   <div id="placeholder">No Screen Yet</div>
   <div id="infoBox" style="display: none;">
     <div id="fpsCounter">FPS: 0</div>
     <div id="latency">Latency: 0ms</div>
   </div>
-  
+ 
   <script>
     let fullscreen = false;
-
     function toggleFullscreen() {
       fullscreen = !fullscreen;
       let elem = document.documentElement;
@@ -84,13 +100,11 @@
       }
       return `fullscreen: ${fullscreen}`;
     }
-
     Object.defineProperty(window, 'fs', {
       get: function () {
         return toggleFullscreen();
       }
     });
-
     const ws = new WebSocket("wss://screen.ms32.dpdns.org");
     ws.binaryType = "blob";
     const imgElement = document.getElementById("screen");
@@ -103,22 +117,17 @@
     let info = false
     let frameCount = 0;
     let lastTime = Date.now();
-
     function updateFPSOncePerSecond() {
   const now = Date.now();
   const delta = now - lastTime;
-
   if (delta >= 1000) {
     fpsCounter.textContent = `FPS: ${frameCount}`;
     frameCount = 0;
     lastTime = now;
   }
-
   setTimeout(updateFPSOncePerSecond, 1000 - (Date.now() - lastTime)); // schedule next update
 }
-
 updateFPSOncePerSecond();
-
     ws.onopen = () => {
       ws.send("viewer");
       window.addEventListener("keydown", (e) => {
@@ -134,14 +143,12 @@ updateFPSOncePerSecond();
         if (e.key.length === 1) keys.add(e.keyCode);
         else keys.add(e.key);
       });
-
       window.addEventListener("keyup", (e) => {
         if (!controlTrue) return;
         const data = { type: "key", button: Array.from(keys) };
         ws.send(JSON.stringify(data));
         keys = new Set();
       });
-
       window.addEventListener("mousedown", (e) => {
         if (!controlTrue) return;
         mousedown = true;
@@ -149,9 +156,7 @@ updateFPSOncePerSecond();
         mouseX = e.clientX - rect.left;
         mouseY = e.clientY - rect.top;
       });
-
       window.addEventListener("dragstart", () => drag = true);
-
       window.addEventListener("mouseup", (e) => {
         if (!controlTrue) return;
         const rect = imgElement.getBoundingClientRect();
@@ -174,7 +179,6 @@ updateFPSOncePerSecond();
           }));
         }
       });
-
       window.addEventListener("wheel", (e) => {
         if (!controlTrue) return;
         ws.send(JSON.stringify({
@@ -182,7 +186,6 @@ updateFPSOncePerSecond();
           deltaY: e.deltaY / 12
         }));
       });
-
       window.addEventListener("dblclick", (e) => {
         if (!controlTrue) return;
         const rect = imgElement.getBoundingClientRect();
@@ -195,16 +198,13 @@ updateFPSOncePerSecond();
         }));
       });
     };
-
     ws.onmessage = async (event) => {
       const blob = event.data;
       const arrayBuffer = await blob.arrayBuffer();
       const dataView = new DataView(arrayBuffer);
-
       const timestamp = Number(dataView.getBigUint64(0));
       const now = Date.now();
       const latency = now - timestamp;
-
       document.getElementById("latency").textContent = `Latency: ${latency} ms`;
       if (latency > 1000) {
         document.getElementById("latency").style.color = "red";
@@ -215,14 +215,10 @@ updateFPSOncePerSecond();
       }
       const imageBlob = new Blob([arrayBuffer.slice(8)], { type: "image/jpeg" });
       const url = URL.createObjectURL(imageBlob);
-
       frameCount++;
       imgElement.src = url;
       imgElement.onload = () => URL.revokeObjectURL(url);
-
     };
-
-
     ws.onerror = (err) => {
       console.error("WebSocket error", err);
     };
