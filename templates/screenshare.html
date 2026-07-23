@@ -3,6 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
   <title>screen share</title>
   <style>
     html, body {
@@ -70,6 +72,23 @@
     #infoBox > div {
       padding: 2px 0;
     }
+
+    /* Force landscape feel on mobile */
+    @media (max-width: 768px) and (orientation: portrait) {
+      body {
+        transform: rotate(90deg);
+        width: 100vh;
+        height: 100vw;
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform-origin: 50% 50%;
+      }
+      #container, #placeholder, #screen {
+        width: 100vh;
+        height: 100vw;
+      }
+    }
   </style>
 </head>
 <body>
@@ -83,6 +102,21 @@
   </div>
  
   <script>
+    // Auto lock to landscape on mobile
+    function lockToLandscape() {
+      if (/Mobi|Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)) {
+        if (screen.orientation && screen.orientation.lock) {
+          screen.orientation.lock('landscape').catch(() => {});
+        }
+        // Fallback rotation for portrait
+        if (window.innerWidth < window.innerHeight) {
+          document.documentElement.style.setProperty('--mobile-rotate', 'true');
+        }
+      }
+    }
+    window.addEventListener('load', lockToLandscape);
+    window.addEventListener('resize', lockToLandscape);
+
     let fullscreen = false;
     function toggleFullscreen() {
       fullscreen = !fullscreen;
@@ -125,7 +159,7 @@
     frameCount = 0;
     lastTime = now;
   }
-  setTimeout(updateFPSOncePerSecond, 1000 - (Date.now() - lastTime)); // schedule next update
+  setTimeout(updateFPSOncePerSecond, 1000 - (Date.now() - lastTime));
 }
 updateFPSOncePerSecond();
     ws.onopen = () => {
